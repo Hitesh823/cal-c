@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Basic Calculator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* General Styling */
+        :root {
+            --bg-color: #1a1a1a;
+            --display-bg: #2a2a2a;
+            --button-bg: #3f3f3f;
+            --button-hover-bg: #5a5a5a;
+            --operator-bg: #ff9f0a;
+            --operator-hover-bg: #ffb74d;
+            --special-bg: #d4d4d2;
+            --special-hover-bg: #e8e8e6;
+            --text-color: #ffffff;
+            --special-text-color: #1c1c1c;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Calculator Body */
+        .calculator {
+            width: 100%;
+            max-width: 320px;
+            background-color: var(--bg-color);
+            border-radius: 24px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Display Screen */
+        .calculator-display {
+            width: 100%;
+            height: 80px;
+            background-color: var(--display-bg);
+            color: var(--text-color);
+            border-radius: 12px;
+            padding: 0 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            font-size: 2.5rem;
+            font-weight: 500;
+            box-sizing: border-box;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Button Grid */
+        .calculator-keys {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+
+        /* General Button Styling */
+        .btn {
+            height: 60px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.5rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Specific Button Types */
+        .btn-number, .btn-decimal {
+            background-color: var(--button-bg);
+            color: var(--text-color);
+        }
+
+        .btn-number:hover, .btn-decimal:hover {
+            background-color: var(--button-hover-bg);
+        }
+
+        .btn-operator {
+            background-color: var(--operator-bg);
+            color: var(--text-color);
+        }
+
+        .btn-operator:hover {
+            background-color: var(--operator-hover-bg);
+        }
+
+        .btn-special {
+            background-color: var(--special-bg);
+            color: var(--special-text-color);
+        }
+
+        .btn-special:hover {
+            background-color: var(--special-hover-bg);
+        }
+
+        /* Double-width button */
+        .btn-zero {
+            grid-column: span 2;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="calculator">
+        <!-- The display screen where numbers and results are shown -->
+        <div class="calculator-display">0</div>
+
+        <!-- The container for all the calculator buttons -->
+        <div class="calculator-keys">
+            <button class="btn btn-special" id="clear">C</button>
+            <button class="btn btn-special" id="sign">+/-</button>
+            <button class="btn btn-special" id="percent">%</button>
+            <button class="btn btn-operator" data-action="divide">/</button>
+
+            <button class="btn btn-number">7</button>
+            <button class="btn btn-number">8</button>
+            <button class="btn btn-number">9</button>
+            <button class="btn btn-operator" data-action="multiply">*</button>
+
+            <button class="btn btn-number">4</button>
+            <button class="btn btn-number">5</button>
+            <button class="btn btn-number">6</button>
+            <button class="btn btn-operator" data-action="subtract">-</button>
+
+            <button class="btn btn-number">1</button>
+            <button class="btn btn-number">2</button>
+            <button class="btn btn-number">3</button>
+            <button class="btn btn-operator" data-action="add">+</button>
+
+            <button class="btn btn-number btn-zero">0</button>
+            <button class="btn btn-decimal">.</button>
+            <button class="btn btn-operator" id="equals">=</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const display = document.querySelector('.calculator-display');
+            const keys = document.querySelector('.calculator-keys');
+
+            let displayValue = '0';
+            let firstValue = null;
+            let operator = null;
+            let waitingForSecondValue = false;
+
+            /**
+             * Updates the calculator display with the current value.
+             */
+            function updateDisplay() {
+                display.textContent = displayValue;
+            }
+            
+            updateDisplay();
+
+            keys.addEventListener('click', (e) => {
+                const element = e.target;
+                const { value } = element;
+
+                // Exit if the clicked element is not a button
+                if (!element.matches('button')) return;
+
+                // Handle different button types
+                if (element.classList.contains('btn-operator')) {
+                    handleOperator(element.id === 'equals' ? '=' : element.dataset.action);
+                    return;
+                }
+
+                if (element.classList.contains('btn-decimal')) {
+                    inputDecimal();
+                    return;
+                }
+
+                if (element.classList.contains('btn-special')) {
+                    handleSpecial(element.id);
+                    return;
+                }
+                
+                if (element.classList.contains('btn-number')) {
+                    inputNumber(element.textContent);
+                }
+            });
+            
+            /**
+             * Handles number button clicks.
+             * @param {string} num The number that was clicked.
+             */
+            function inputNumber(num) {
+                if (waitingForSecondValue) {
+                    displayValue = num;
+                    waitingForSecondValue = false;
+                } else {
+                    displayValue = displayValue === '0' ? num : displayValue + num;
+                }
+                updateDisplay();
+            }
+
+            /**
+             * Handles the decimal point button click.
+             */
+            function inputDecimal() {
+                if (!displayValue.includes('.')) {
+                    displayValue += '.';
+                }
+                updateDisplay();
+            }
+
+            /**
+             * Handles operator button clicks (+, -, *, /).
+             * @param {string} nextOperator The operator that was clicked.
+             */
+            function handleOperator(nextOperator) {
+                const value = parseFloat(displayValue);
+
+                if (operator && waitingForSecondValue) {
+                    operator = nextOperator;
+                    return;
+                }
+
+                if (firstValue === null) {
+                    firstValue = value;
+                } else if (operator) {
+                    const result = calculate(firstValue, value, operator);
+                    displayValue = `${parseFloat(result.toFixed(7))}`;
+                    firstValue = result;
+                }
+
+                waitingForSecondValue = true;
+                operator = nextOperator;
+                updateDisplay();
+            }
+            
+            /**
+             * Handles special function button clicks (C, +/-, %).
+             * @param {string} id The ID of the special button.
+             */
+            function handleSpecial(id) {
+                switch (id) {
+                    case 'clear':
+                        displayValue = '0';
+                        firstValue = null;
+                        operator = null;
+                        waitingForSecondValue = false;
+                        break;
+                    case 'sign':
+                        displayValue = (parseFloat(displayValue) * -1).toString();
+                        break;
+                    case 'percent':
+                        displayValue = (parseFloat(displayValue) / 100).toString();
+                        break;
+                }
+                updateDisplay();
+            }
+
+            /**
+             * Performs the calculation based on the operator.
+             * @param {number} first The first operand.
+             * @param {number} second The second operand.
+             * @param {string} op The operator.
+             * @returns {number} The result of the calculation.
+             */
+            function calculate(first, second, op) {
+                if (op === 'add') return first + second;
+                if (op === 'subtract') return first - second;
+                if (op === 'multiply') return first * second;
+                if (op === 'divide') {
+                    // Handle division by zero
+                    if (second === 0) {
+                        return 'Error';
+                    }
+                    return first / second;
+                }
+                return second; // For the equals button
+            }
+        });
+    </script>
+</body>
+</html>
